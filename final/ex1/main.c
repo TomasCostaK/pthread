@@ -82,7 +82,49 @@ static void *work(int tid){
     printf("Thread %d created \n", id);
 
     while (getDataChunk(id, buff) != 2){
-        printf("BUFFER thread %d: %s \n", id, buff);
+        //printf("BUFFER thread %d: %s \n", id, buff);
+        int i = 0;
+        char ch;
+        //char c[4];
+    
+        while (i < strlen(buff)){
+            /*c[0] = buff[i];
+            for (int j = 1; j < numberOfBytesInChar((unsigned char)c); j++) {
+                i++;
+                c[j] = buff[i];
+            }*/
+            
+            ch = buff[i];
+            i++;
+
+            ch = tolower(ch);   //lower case
+
+            switch (ch) //accent removal
+            {
+                case (char) 'á': ch = 'a'; break;
+                case (char) 'à': ch = 'a'; break;
+                case (char) 'ã': ch = 'a'; break;
+                case (char) 'â': ch = 'a'; break;
+                case (char) 'é': ch = 'e'; break;
+                case (char) 'è': ch = 'e'; break;
+                case (char) 'ê': ch = 'e'; break;
+                case (char) 'í': ch = 'i'; break;
+                case (char) 'ì': ch = 'i'; break;
+                case (char) 'ó': ch = 'o'; break;
+                case (char) 'ò': ch = 'o'; break;
+                case (char) 'õ': ch = 'o'; break;
+                case (char) 'ô': ch = 'o'; break;
+                case (char) 'ú': ch = 'u'; break;
+                case (char) 'ù': ch = 'u'; break;
+                case (char) 'ç': ch = 'c'; break;
+                default: break;
+            }
+            if ((int)ch < 0 || (int)ch > 127)   //remove non ascii
+                continue;
+
+            printf("%c",ch);
+        }
+
     }
 
     statusWorker[id] = EXIT_SUCCESS;
