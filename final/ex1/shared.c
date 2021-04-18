@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <errno.h>
 #include "helperfuncs.h"
+#include "main.h"
 
 extern int *statusWorker;
 
@@ -15,9 +16,16 @@ static FILE *file;
 static int currIndex = 0;
 static int chunkSize = 75;
 static int finishedTexts = 0;
+struct PartialInfo finalInfo;
 
 void openNextFile(){
     
+    finalInfo.nwords = 0;
+    finalInfo.data = (int**)malloc(sizeof(int*));
+    finalInfo.data[0] = (int*)malloc(sizeof(int));
+    finalInfo.data[0][0] = 0;
+    finalInfo.rows = 1;
+
     if (numberOfFiles == currIndex){
         finishedTexts = 1;
         return;
@@ -93,8 +101,13 @@ int getDataChunk(int threadId, char buff[])
         statusWorker[threadId] = EXIT_FAILURE;
         pthread_exit (&statusWorker[threadId]);
     }
-
     return status;
+}
+
+void savePartialResults(int threadID, struct PartialInfo partialInfo){
+
+    for (int row = 1; row < partialInfo.rows; row++){
+        for (int col = 1; row < partialInfo.rows; row++){
 }
 
 

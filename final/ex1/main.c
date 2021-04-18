@@ -4,10 +4,12 @@
 #include <pthread.h>
 #include "shared.h"
 #include "helperfuncs.h"
+#include "main.h"
 
 int *statusWorker;
 
 static void *work (int tid);
+
 
 
 int main(int argc, char *argv[]){
@@ -84,9 +86,23 @@ static void *work(int tid){
     while (getDataChunk(id, buff) != 2){
         //printf("BUFFER thread %d: %s \n", id, buff);
         int i = 0;
-        char ch;
+
         //char c[4];
-    
+        char ch;
+
+        //init flags
+        int consonants = 0;
+        int inword = 0;
+        int numchars = 0;
+
+        //make triangular matrix
+        struct PartialInfo partialInfo;
+        partialInfo.nwords = 0;
+        partialInfo.data = (int**)malloc(sizeof(int*));
+        partialInfo.data[0] = (int*)malloc(sizeof(int));
+        partialInfo.data[0][0] = 0;
+        partialInfo.rows = 1;
+
         while (i < strlen(buff)){
             /*c[0] = buff[i];
             for (int j = 1; j < numberOfBytesInChar((unsigned char)c); j++) {
@@ -122,8 +138,40 @@ static void *work(int tid){
             if ((int)ch < 0 || (int)ch > 127)   //remove non ascii
                 continue;
 
-            printf("%c",ch);
+            //printf("%c",ch);
+
+            if (ch == '\''){    //apostrhope
+                continue;
+            }
+
+            int isStopChar = stopChars(ch);
+
+            if (isStopChar && inword){ //word already started and end of word
+                partialInfo.nwords++;
+                partialInfo.data = prepareMatrix(&partialInfo.rows, numchars, partialInfo.data);
+                partialInfo.data[numchars][consonants]++;   //add consonant count
+                partialInfo.data[numchars][numchars+1]++;   //add word count 
+
+                consonants = 0;
+                numchars = 0;
+                inword = 0;
+            }
+
+            if (!isStopChar){
+                inword = 1;
+                numchars++;
+                if (isConsonant(ch))
+                    consonants++;
+
+            }
         }
+        if (inword == 1){ //last word
+            partialInfo.data = prepareMatrix(&partialInfo.rows, numchars, partialInfo.data);
+            partialInfo.data[numchars][consonants]++; 
+            partialInfo.nwords++;
+        }
+
+        savePartialResults(id, partialInfo);
 
     }
 
