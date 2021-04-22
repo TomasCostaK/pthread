@@ -6,6 +6,6 @@ void openNextFile();
 
 void storeFileNames(int nfileNames, char *fileNames[] );
 
-int getDataChunk(int threadId, char buff[]);
+void savePartialResults(int threadID, struct PartialInfo partialInfo);
 
 #endif 
