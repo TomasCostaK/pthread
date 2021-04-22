@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <pthread.h>
 #include "shared.h"
 #include "helperfuncs.h"
@@ -168,6 +169,7 @@ static void *work(int tid){
         if (inword == 1){ //last word
             partialInfo.data = prepareMatrix(&partialInfo.rows, numchars, partialInfo.data);
             partialInfo.data[numchars][consonants]++; 
+            partialInfo.data[numchars][numchars+1]++;
             partialInfo.nwords++;
         }
 

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <string.h>
 #include <errno.h>
 #include "helperfuncs.h"
 #include "main.h"
@@ -22,6 +23,7 @@ struct PartialInfo finalInfo[10];
 void openNextFile(){
 
     if (numberOfFiles-1 == currIndex){    //Finished all the texts
+        printf("All texts read\n");
         finishedTexts = 1;
         return;
     }
@@ -41,15 +43,12 @@ void storeFileNames(int nfileNames, char *fileNames[] )
 
         //Prepare matrix that will store the data
         finalInfo[i].nwords = 0;
+        finalInfo[i].textInd = i;
         finalInfo[i].data = (int**)malloc(sizeof(int*));
         finalInfo[i].data[0] = (int*)malloc(sizeof(int));
         finalInfo[i].data[0][0] = 0;
         finalInfo[i].rows = 1;
     }
-
-    
-
-    
 
     openNextFile();
 }
@@ -80,7 +79,7 @@ int getDataChunk(int threadId, char buff[], struct PartialInfo *partialInfo)
             character = fgetc(file);
 
             if (character == EOF){  //File has ended
-                printf("Finished\n");
+                printf("Finished File\n");
                 fclose(file);
                 openNextFile();
                 break;
@@ -110,6 +109,7 @@ int getDataChunk(int threadId, char buff[], struct PartialInfo *partialInfo)
         statusWorker[threadId] = EXIT_FAILURE;
         pthread_exit (&statusWorker[threadId]);
     }
+
     return status;
 }
 
@@ -123,21 +123,18 @@ void savePartialResults(int threadId, struct PartialInfo partialInfo){
         pthread_exit (&statusWorker[threadId]);
     }
     //printf("THREAD %d aquired lock\n", threadId);
-    printf("TEXT: %d\n", partialInfo.textInd);
-    printf("partialInfo rows: %d\n", partialInfo.rows);
-    printf("final rows: %d\n", finalInfo[partialInfo.textInd].rows);
-    printf("----------\n");
 
-    finalInfo[partialInfo.textInd].data = prepareMatrix(&finalInfo[partialInfo.textInd].rows, partialInfo.rows-1, finalInfo[partialInfo.textInd].data);   //realloc matrix if necessary
+
+    //resize matrix if necessary since this blob of data can have bigger words
+    finalInfo[partialInfo.textInd].data = prepareMatrix(&(finalInfo[partialInfo.textInd].rows), partialInfo.rows-1, finalInfo[partialInfo.textInd].data);
+    
     finalInfo[partialInfo.textInd].nwords += partialInfo.nwords; //total number of words
+    
     for (int row = 1; row < partialInfo.rows; row++){   //row represents number of chars in word (row 2 = words with 2 chars)
-        
-
-        for (int col = 0; col < partialInfo.rows + 1; col++){   //col represents number of consonants (if row = 2, col will get the value of 0, 1 and 2)
+        for (int col = 0; col < row + 1; col++){   //col represents number of consonants (if row = 2, col will get the value of 0, 1 and 2)
             finalInfo[partialInfo.textInd].data[row][col] += partialInfo.data[row][col];
         }
         finalInfo[partialInfo.textInd].data[row][row+1] += partialInfo.data[row][row+1]; //the number of words is stored in the last cell of the array
-
     }
 
 
