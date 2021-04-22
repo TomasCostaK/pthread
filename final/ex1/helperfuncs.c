@@ -14,8 +14,9 @@ int** allocTriMatrix(int oldrows, int newrows, int ** m){
 }
 
 int** prepareMatrix(int *currentRows, int row, int ** m){
-    //printf("%d %d\n", *currentRows, row);
-    row++;
+    //Check if matric needs more space
+    //row simbolizes the number of char in the word that is going to be addded
+    row++;  //since row 0 exists (words with 0 char), need to do row++
     if (row > *currentRows){
         m = allocTriMatrix(*currentRows, row, m);
         *currentRows = row;
