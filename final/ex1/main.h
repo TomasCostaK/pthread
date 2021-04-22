@@ -5,6 +5,7 @@ struct PartialInfo{
     int nwords;
     int ** data;
     int rows;
+    int textInd;
 };
 
 #endif 

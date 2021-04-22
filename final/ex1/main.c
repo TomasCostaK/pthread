@@ -82,8 +82,9 @@ static void *work(int tid){
     int id = tid;
     char buff[100];
     printf("Thread %d created \n", id);
+    struct PartialInfo partialInfo;
 
-    while (getDataChunk(id, buff) != 2){
+    while (getDataChunk(id, buff, &partialInfo) != 2){
         //printf("BUFFER thread %d: %s \n", id, buff);
         int i = 0;
 
@@ -96,7 +97,6 @@ static void *work(int tid){
         int numchars = 0;
 
         //make triangular matrix
-        struct PartialInfo partialInfo;
         partialInfo.nwords = 0;
         partialInfo.data = (int**)malloc(sizeof(int*));
         partialInfo.data[0] = (int*)malloc(sizeof(int));
@@ -172,6 +172,8 @@ static void *work(int tid){
         }
 
         savePartialResults(id, partialInfo);
+        
+        free(partialInfo.data);
 
     }
 
