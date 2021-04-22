@@ -150,6 +150,44 @@ void savePartialResults(int threadId, struct PartialInfo partialInfo){
 
 void printProcessingResults(){
 
+    for (int f = 0; f < numberOfFiles; f++){
+        printf("Statistics for %s\n", files[f]);
+        printf("Total words = %d\n", finalInfo[f].nwords);
+        
+        //LINE 1
+        printf("  ");
+        for (int i=1; i<finalInfo[f].rows; i++){
+            printf("%6d", i);
+        }
+        printf("\n");
+        
+        //LINE 2
+        printf("  ");
+        for (int i=1; i<finalInfo[f].rows; i++){
+            printf("%6d", finalInfo[f].data[i][i+1]);
+        }
+        printf("\n");
+
+        //LINE 3
+        printf("  ");
+        for (int i=1; i<finalInfo[f].rows; i++){
+            printf("%6.2f", 100 * (float)finalInfo[f].data[i][i+1] / (float)finalInfo[f].nwords);
+        }
+        printf("\n");
+
+        //---------
+        for (int col = 0; col<finalInfo[f].rows; col++){
+            printf("%2d", col);
+            for (int row = 1; row < finalInfo[f].rows; row++){
+                if (col > row){
+                    printf("      ");
+                }
+                else
+                    printf("%6.1f", 100 * (float)finalInfo[f].data[row][col] / (float)finalInfo[f].data[row][row+1]);
+            }
+            printf("\n");
+        }
+    }
 }
 
 

@@ -66,9 +66,9 @@ int main(int argc, char *argv[]){
         printf ("thread worker, with id %d, has terminated: ", t);
         printf ("its status was %d\n", *status_p);
     }
-/*
-    printProcessingResults ();
-    getTime (&t1);
+
+    printProcessingResults();
+    /*getTime (&t1);
     printProcessingTime (t1 – t0);
     
     char buff[100];  
