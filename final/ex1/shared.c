@@ -182,8 +182,13 @@ void printProcessingResults(){
                 if (col > row){
                     printf("      ");
                 }
-                else
-                    printf("%6.1f", 100 * (float)finalInfo[f].data[row][col] / (float)finalInfo[f].data[row][row+1]);
+                else{
+                    if(finalInfo[f].data[row][row+1] == 0)
+                        printf("%6.1f", 0.0);
+                    else
+                        printf("%6.1f", 100 * (float)finalInfo[f].data[row][col] / (float)finalInfo[f].data[row][row+1]);
+
+                }
             }
             printf("\n");
         }
