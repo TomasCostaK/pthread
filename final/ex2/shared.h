@@ -6,6 +6,10 @@ void openNextFile();
 
 void storeFileNames(int nfileNames, char *fileNames[] );
 
-void savePartialResults(int threadID, struct PartialInfo partialInfo);
+double computeValue(int n, double * x, double * y, int point);
+
+void storeResults();
+
+void savePartialResults(int threadId, int fileId, int point, double val);
 
 #endif 

@@ -2,13 +2,12 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <errno.h>
-#include "helperfuncs.h"
 #include "cross_relation.h"
+#include "shared.h"
 
 extern int *statusWorker;
 
 static pthread_mutex_t accessCR = PTHREAD_MUTEX_INITIALIZER;
-
 
 static int numberOfFiles;
 static char *files[10];
@@ -19,7 +18,17 @@ static int finishedTexts = 0;
 struct PartialInfo *finalInfo;
 
 // returns the int of the next file
-int openNextFile(){
+void openNextFile(int threadId){
+
+
+    if ((statusWorker[threadId] = pthread_mutex_lock (&accessCR)) != 0)                                   /* enter monitor */
+    { 
+        errno = statusWorker[threadId];                                                            /* save error in errno */
+        perror ("error on entering monitor(CF)");
+        statusWorker[threadId] = EXIT_FAILURE;
+        pthread_exit (&statusWorker[threadId]);
+    }
+    printf("THREAD %d aquired lock\n", threadId);
 
     // If the partialInfo class is not empty, store the results in the given file
     if(currIndex != 0 && finalInfo[currIndex-1].signal_size == 0) storeResults();
@@ -39,8 +48,9 @@ int openNextFile(){
     file = fopen(files[currIndex], "rb+"); 
 
     //After we open a file, we can load into memory the signals:
-    fread(signalSize, sizeof(int), 1, file);   
+    fread(&signalSize, sizeof(int), 1, file); 
     printf("Signal Size: %d\n", signalSize);
+    finalInfo[currIndex].signal_size = signalSize;  
 
     // Wont we have problems here??
     // Reading X array of doubles
@@ -50,14 +60,30 @@ int openNextFile(){
     // Reading true values of XY
     fread(finalInfo[currIndex].xy_true, sizeof(double [signalSize]), 1, file);
 
+    printf("THREAD %d realesed lock\n", threadId);
+
+    if ((statusWorker[threadId] = pthread_mutex_unlock (&accessCR)) != 0)                                  /* exit monitor */
+    { 
+        errno = statusWorker[threadId];                                                            /* save error in errno */
+        perror ("error on exiting monitor(CF)");
+        statusWorker[threadId] = EXIT_FAILURE;
+        pthread_exit (&statusWorker[threadId]);
+    }
+
     currIndex++;
     return currIndex - 1;
 }
 
 // we only write in the end since threads are not ordered and we want to write the results in a given order
+// this is already inside the lock, so its fine
 void storeResults(){
-
-    
+    /* These values are already present in the file, we only need to append our calculations
+    fwrite(&finalInfo[currIndex].signal_size, sizeof(int), 1, files[currIndex]);
+    fwrite(&finalInfo[currIndex].x, sizeof(double [signalSize]), 1, files[currIndex]);
+    fwrite(&finalInfo[currIndex].y, sizeof(double [signalSize]), 1, files[currIndex]);
+    fwrite(&finalInfo[currIndex].xy_true, sizeof(double [signalSize]), 1, files[currIndex]);
+    */
+    fwrite(&finalInfo[currIndex].xy, sizeof(double [signalSize]), 1, files[currIndex]);
 }
 
 void storeFileNames(int nfileNames, char *fileNames[] )
@@ -69,25 +95,25 @@ void storeFileNames(int nfileNames, char *fileNames[] )
         files[i] = fileNames[i];
     }
 
-    openNextFile();
+    openNextFile(0);
 }
 
 int processConvPoint(int threadId, int fileId, int n, double * x, double * y, int point){
 
     // This condition means we have reached the end of the file, so the next point we want to process is
-    if (signalSize == point+1) openNextFile();
+    if (signalSize == point+1) openNextFile(threadId);
 
     int status;
     if (!finishedTexts)    //work is not over
     {
 
-        double result = 0;
+        double result;
         // open file, read signal, update signal, read x, read y, read xy_true and process xy outside lock
         // Getting the signal size
         result = computeValue(n, x, y, point);
 
         // Saving partil results makes using of locks
-        savePartialResults(threadId, currIndex, point, result);
+        savePartialResults(threadId, fileId, point, result);
         status = 0;
 
     }
@@ -105,7 +131,7 @@ double computeValue(int n, double * x, double * y, int point){
             result += x[k] * y[(i+k) % signalSize];
         }
     }
-    return result;
+    return (double)result;
 }
 
 void savePartialResults(int threadId, int fileId, int point, double val){
