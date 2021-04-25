@@ -3,10 +3,9 @@
 #include <unistd.h>
 #include <pthread.h>
 #include "cross_relation.h"
-#include "shared.c"
 
 int *statusWorker;
-
+static void *work (int tid);
 
 int main(int argc, char *argv[])
 {   
@@ -43,13 +42,12 @@ int main(int argc, char *argv[])
     for (int t = 0; t < threads; t++)
         workers[t] = t;
 
-
     storeFileNames(fi, files);
 
     //---------------THREADS
     for (int t = 0; t < threads; t++){
         //create(t)
-        if (pthread_create (&tIdworker[t], NULL, processConvPoint, workers[t]) != 0)                              /* thread producer */
+        if (pthread_create (&tIdworker[t], NULL, work, workers[t]) != 0)                              /* thread producer */
         { 
             perror ("error on creating thread worker");
             exit (EXIT_FAILURE);
@@ -69,4 +67,23 @@ int main(int argc, char *argv[])
     t1 = ((double) clock ()) / CLOCKS_PER_SEC;
     printf ("\nElapsed time = %.6f s\n", t1 - t0);
     exit (EXIT_SUCCESS);
+}
+
+
+static void *work(int tid){
+
+    int id = tid;
+    printf("Thread %d created \n", id);
+    int fileId, n, point;
+    double * x;
+    double * y;
+    double val = 0;
+
+    while (processConvPoint(id, &fileId, &n, &x, &y, &point) != 2){
+        val = computeValue(n, x, y, point);
+        savePartialResults(id, fileId, point, val);
+    }
+
+    statusWorker[id] = EXIT_SUCCESS;
+    pthread_exit (&statusWorker[id]);
 }

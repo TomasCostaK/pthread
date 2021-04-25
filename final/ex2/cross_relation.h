@@ -3,10 +3,10 @@
 
 struct PartialInfo{
     int signal_size;
-    double* x;
-    double* y;
-    double* xy;
-    double* xy_true;
+    double * x;
+    double * y;
+    double * xy;
+    double * xy_true;
 };
 
 #endif 
