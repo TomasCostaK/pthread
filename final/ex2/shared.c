@@ -10,7 +10,7 @@ static pthread_mutex_t accessCR = PTHREAD_MUTEX_INITIALIZER;
 
 static int numberOfFiles;
 static char *files[15];
-static FILE *file;
+static FILE *file [15];
 static int currFile = 0;
 static int currIndex = 0;
 static int finishedTexts = 0;
@@ -31,21 +31,20 @@ void storeFileNames(int nfileNames, char *fileNames[] )
 // returns the int of the next file
 void openNextFile(){
 
-    // If the partialInfo class is not empty, store the results in the given file
-    //if(currFile != 0 && finalInfo[currFile-1].signal_size == 0) storeResults();
-
     if (numberOfFiles == currFile){
-        printf("All texts read\n");
+        printf("\nAll texts read\n");
         finishedTexts = 1;
         return;
     }
 
+    currIndex = 0;
+
     printf("---------------OPENED %s-------------- \n", files[currFile]);
-    file = fopen(files[currFile], "rb+"); 
+    file[currFile] = fopen(files[currFile], "ab+"); 
 
     int sig_size = 0;
     //After we open a file, we can load into memory the signals:
-    fread(&sig_size, sizeof(int), 1, file);
+    fread(&sig_size, sizeof(int), 1, file[currFile]);
     finalInfo[currFile].signal_size = sig_size;
     printf("Signal Size: %d\n", finalInfo[currFile].signal_size);
 
@@ -56,17 +55,20 @@ void openNextFile(){
 
     // Wont we have problems here??
     // Reading X array of doubles
-    fread(finalInfo[currFile].x, sizeof(double [sig_size]), 1, file);
+    fread(finalInfo[currFile].x, sizeof(double [sig_size]), 1, file[currFile]);
     printf("X[0]: %f\n", finalInfo[currFile].x[0]);
     
     // Reading Y array of doubles
-    fread(finalInfo[currFile].y, sizeof(double [sig_size]), 1, file);
-    printf("Y[5]: %f\n", finalInfo[currFile].y[5]);
+    fread(finalInfo[currFile].y, sizeof(double [sig_size]), 1, file[currFile]);
+    printf("Y[0]: %f\n", finalInfo[currFile].y[0]);
 
     // Reading true values of XY
-    fread(finalInfo[currFile].xy_true, sizeof(double [sig_size]), 1, file);
-    printf("XY[10]: %f\n", finalInfo[currFile].xy_true[10]);
+    fread(finalInfo[currFile].xy_true, sizeof(double [sig_size]), 1, file[currFile]);
+    printf("XY_TRUE[0]: %f\n", finalInfo[currFile].xy_true[0]);
 
+    // Reading true values of XY
+    fread(finalInfo[currFile].xy, sizeof(double [sig_size]), 1, file[currFile]);
+    //printf("XY[0]: %f\n", finalInfo[currFile].xy[0]);
 
     return;
 }
@@ -134,7 +136,7 @@ void savePartialResults(int threadId, int fileId, int point, double val){
 
     // Actual writing to struct
     finalInfo[fileId].xy[point] = val;
-    printf("Saving value[%d] == %f \n", point, val);
+    //printf("Saving value[%d] == %f on file %d\n", point, val, fileId);
 
     //printf("THREAD %d released lock on SavingPartialResults\n\n", threadId);
     if ((statusWorker[threadId] = pthread_mutex_unlock (&accessCR)) != 0)                                  /* exit monitor */
@@ -156,5 +158,43 @@ void storeResults(){
     fwrite(&finalInfo[currFile].y, sizeof(double [finalInfo[currFile].signal_size]), 1, files[currFile]);
     fwrite(&finalInfo[currFile].xy_true, sizeof(double [finalInfo[currFile].signal_size]), 1, files[currFile]);
     */
-    fwrite(&finalInfo[currFile].xy, sizeof(double [finalInfo[currFile].signal_size]), 1, files[currFile]);
+    for (int i = 0; i < currFile; i++)
+    {
+        //printf("Writing values for file %d: XY[0] == %f\n", i, finalInfo[i].xy[0]);
+        fwrite(finalInfo[i].xy, sizeof(double [finalInfo[i].signal_size]), 1, file[i]);
+        fclose(file[i]);
+    }
+}
+
+void checkProcessingResults(){
+    printf("\n----------------------------------\nChecking results for %d files\n", currFile);
+    FILE * file_tmp;
+    for (int i = 0; i < currFile; i++)
+    {
+        file_tmp = fopen(files[i], "rb");
+        int count = 0;
+
+        int signal_size;
+        fread(&signal_size, sizeof(int), 1, file_tmp);    
+
+        double x[signal_size], y[signal_size], xy[signal_size], xy_true[signal_size];
+
+        fread(&x, sizeof(double [signal_size]), 1, file_tmp);    
+        fread(&y, sizeof(double [signal_size]), 1, file_tmp);    
+        fread(&xy_true, sizeof(double [signal_size]), 1, file_tmp);    
+
+        fread(&xy, sizeof(double [signal_size]), 1, file_tmp);    
+
+        for (int k = 0; k < signal_size; k++)
+        {
+            if (xy[k] != xy_true[k]) {
+                printf("Values differ on idx: %d, \t RAW=%f  !=  PROCESSED=%f\n", k, xy_true[k], xy[k]);
+                count++;
+            }
+        }
+
+        if (count == 0) printf("All values are the same for file: %s\n", files[i]);
+        
+    }
+    
 }
