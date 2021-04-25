@@ -9,8 +9,6 @@ void openNextFile();
 
 int processConvPoint(int threadId, int fileId, int n, double * x, double * y, int point);
 
-double computeValue(int n, double * x, double * y, int point);
-
 void savePartialResults(int threadId, int fileId, int point, double val);
 
 void storeResults();

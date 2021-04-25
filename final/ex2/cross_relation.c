@@ -7,6 +7,17 @@
 int *statusWorker;
 static void *work (int tid);
 
+double computeValue(int n, double * x, double * y, int point){
+    double result = 0;
+    // Circular cross
+
+    for (int k=0; k<n; k++){
+        result += x[k] * y[(point+k) % n];
+    }
+
+    return (double) result;
+}
+
 int main(int argc, char *argv[])
 {   
     char *files[10];    
@@ -77,13 +88,15 @@ static void *work(int tid){
     int fileId, n, point;
     double * x;
     double * y;
-    double val = 0;
+    double val;
 
     while (processConvPoint(id, &fileId, &n, &x, &y, &point) != 2){
         val = computeValue(n, x, y, point);
+
         savePartialResults(id, fileId, point, val);
     }
 
     statusWorker[id] = EXIT_SUCCESS;
     pthread_exit (&statusWorker[id]);
 }
+

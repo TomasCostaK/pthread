@@ -49,10 +49,10 @@ void openNextFile(){
     finalInfo[currFile].signal_size = sig_size;
     printf("Signal Size: %d\n", finalInfo[currFile].signal_size);
 
-    finalInfo[currFile].x = (double*)malloc(sizeof(double*));
-    finalInfo[currFile].y = (double*)malloc(sizeof(double*));
-    finalInfo[currFile].xy = (double*)malloc(sizeof(double*));
-    finalInfo[currFile].xy_true = (double*)malloc(sizeof(double*));
+    finalInfo[currFile].x = (double*)malloc(sizeof(double [sig_size]));
+    finalInfo[currFile].y = (double*)malloc(sizeof(double [sig_size]));
+    finalInfo[currFile].xy = (double*)malloc(sizeof(double [sig_size]));
+    finalInfo[currFile].xy_true = (double*)malloc(sizeof(double [sig_size]));
 
     // Wont we have problems here??
     // Reading X array of doubles
@@ -65,7 +65,7 @@ void openNextFile(){
 
     // Reading true values of XY
     fread(finalInfo[currFile].xy_true, sizeof(double [sig_size]), 1, file);
-    printf("XY[10]: %f\n", finalInfo[currFile].xy[10]);
+    printf("XY[10]: %f\n", finalInfo[currFile].xy_true[10]);
 
 
     return;
@@ -80,11 +80,11 @@ int processConvPoint(int threadId, int* fileId, int* n, double ** x, double ** y
         statusWorker[threadId] = EXIT_FAILURE;
         pthread_exit (&statusWorker[threadId]);
     }
-    printf("THREAD %d acquired lock on ProcessConvPoint\n", threadId);
+    //printf("THREAD %d acquired lock on ProcessConvPoint\n", threadId);
     //printf("SingalSize = %d \t currIndex = %d\n", finalInfo[currFile].signal_size, currIndex);
 
     // This condition means we have reached the end of the file, so the next point we want to process is
-    if (finalInfo[currFile].signal_size == currIndex+1) {
+    if (finalInfo[currFile].signal_size == currIndex) {
         currFile++;
         openNextFile();
     }
@@ -92,19 +92,22 @@ int processConvPoint(int threadId, int* fileId, int* n, double ** x, double ** y
     int status;
     if (!finishedTexts)    //work is not over
     {
+
         // Writing to the variables we need to
         *fileId = currFile;
         *point = currIndex;
-        *n = finalInfo[currIndex].signal_size;
-        *x = finalInfo[currIndex].x;
-        *y = finalInfo[currIndex].y;
+        *n = finalInfo[currFile].signal_size;
+        *x = finalInfo[currFile].x;
+        *y = finalInfo[currFile].y;
         currIndex++;
         status = 0;
+
+
     }
     else
         status = 2; // status 2 == endProcess
 
-    printf("THREAD %d released lock on ProcessConvPoint, status=%d\n\n", threadId, status);
+    //printf("THREAD %d released lock on ProcessConvPoint, status=%d\n\n", threadId, status);
     if ((statusWorker[threadId] = pthread_mutex_unlock (&accessCR)) != 0)                                  /* exit monitor */
     { 
         errno = statusWorker[threadId];                                                            /* save error in errno */
@@ -116,16 +119,6 @@ int processConvPoint(int threadId, int* fileId, int* n, double ** x, double ** y
     return status;
 }
 
-double computeValue(int n, double * x, double * y, int point){
-    double result = 0;
-    // Circular cross
-    for (int i=0; i<point; i++){
-        for (int k=0; k<point; k++){
-            result += x[k] * y[(i+k) % finalInfo[currFile].signal_size];
-        }
-    }
-    return result;
-}
 
 void savePartialResults(int threadId, int fileId, int point, double val){
     // Here we need the lock to write partial results from PartialInfo to FinalInfo
@@ -137,13 +130,13 @@ void savePartialResults(int threadId, int fileId, int point, double val){
         statusWorker[threadId] = EXIT_FAILURE;
         pthread_exit (&statusWorker[threadId]);
     }
-    printf("THREAD %d aquired lock on SavingPartialResults\n", threadId);
+    //printf("THREAD %d aquired lock on SavingPartialResults\n", threadId);
 
     // Actual writing to struct
     finalInfo[fileId].xy[point] = val;
     printf("Saving value[%d] == %f \n", point, val);
 
-    printf("THREAD %d released lock on SavingPartialResults\n\n", threadId);
+    //printf("THREAD %d released lock on SavingPartialResults\n\n", threadId);
     if ((statusWorker[threadId] = pthread_mutex_unlock (&accessCR)) != 0)                                  /* exit monitor */
     { 
         errno = statusWorker[threadId];                                                            /* save error in errno */
