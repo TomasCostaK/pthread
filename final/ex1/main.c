@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
+#include <time.h>
 #include "shared.h"
 #include "helperfuncs.h"
 #include "main.h"
@@ -15,10 +16,10 @@ static void *work (int tid);
 
 int main(int argc, char *argv[]){
 
+    //Process command line
     char *files[10];    
     int fi = 0;
     int threads = 0;
-
     int c;
     while ((c = getopt (argc, argv, "t:i:")) !=-1){
         switch (c)
@@ -39,13 +40,17 @@ int main(int argc, char *argv[]){
 
     pthread_t tIdworker[threads];
     unsigned int workers[threads];
-    int *status_p;                                                                      /* pointer to execution status */
+    int *status_p;                                  /* pointer to execution status */
+
+    double t0, t1; 
 
     for (int t = 0; t < threads; t++)
         workers[t] = t;
 
 
     storeFileNames(fi, files );
+
+    t0 = ((double) clock ()) / CLOCKS_PER_SEC;
 
     //---------------THREADS
     for (int t = 0; t < threads; t++){
@@ -68,13 +73,8 @@ int main(int argc, char *argv[]){
     }
 
     printProcessingResults();
-    /*getTime (&t1);
-    printProcessingTime (t1 – t0);
-    
-    char buff[100];  
-    getDataChunk(1, buff);
-    printf(buff);
-*/
+    t1 = ((double) clock ()) / CLOCKS_PER_SEC;
+    printf ("\nElapsed time = %.6f s\n", t1 - t0);
 
 }
 
@@ -86,7 +86,6 @@ static void *work(int tid){
     struct PartialInfo partialInfo;
 
     while (getDataChunk(id, buff, &partialInfo) != 2){
-        //printf("BUFFER thread %d: %s \n", id, buff);
         int i = 0;
 
         //char c[4];
@@ -104,15 +103,13 @@ static void *work(int tid){
         partialInfo.data[0][0] = 0;
         partialInfo.rows = 1;
 
-        while (i < strlen(buff)){
-            /*c[0] = buff[i];
-            for (int j = 1; j < numberOfBytesInChar((unsigned char)c); j++) {
-                i++;
-                c[j] = buff[i];
-            }*/
-            
+        while (i < strlen(buff)){   //go through the chars in the buffer
+
             ch = buff[i];
             i++;
+            
+            //The way we get the characters is not the correct way, we dont account for utf8 coding here
+            //we did not have time do fix this even though we know it is wrong.
 
             ch = tolower(ch);   //lower case
 
@@ -134,12 +131,27 @@ static void *work(int tid){
                 case (char) 'ú': ch = 'u'; break;
                 case (char) 'ù': ch = 'u'; break;
                 case (char) 'ç': ch = 'c'; break;
+                case (char) 'Á': ch = 'a'; break;
+                case (char) 'À': ch = 'a'; break;
+                case (char) 'Ã': ch = 'a'; break;
+                case (char) 'Â': ch = 'a'; break;
+                case (char) 'É': ch = 'e'; break;
+                case (char) 'È': ch = 'e'; break;
+                case (char) 'Ê': ch = 'e'; break;
+                case (char) 'Í': ch = 'i'; break;
+                case (char) 'Ì': ch = 'i'; break;
+                case (char) 'Ó': ch = 'o'; break;
+                case (char) 'Ò': ch = 'o'; break;
+                case (char) 'Õ': ch = 'o'; break;
+                case (char) 'Ô': ch = 'o'; break;
+                case (char) 'Ú': ch = 'u'; break;
+                case (char) 'Ù': ch = 'u'; break;
+                case (char) 'Ç': ch = 'c'; break;
                 default: break;
             }
             if ((int)ch < 0 || (int)ch > 127)   //remove non ascii
                 continue;
 
-            //printf("%c",ch);
 
             if (ch == '\''){    //apostrhope
                 continue;
