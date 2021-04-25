@@ -7,7 +7,7 @@ int** check_file(FILE *file){
     fread(&signal_size, sizeof(int), 1, file);    
 
     printf("\n");
-    double x[signal_size], y[signal_size], xy[signal_size];
+    double x[signal_size], y[signal_size], xy[signal_size], xy_true[signal_size];
 
     fread(&x, sizeof(double [signal_size]), 1, file);    
     for(int j=signal_size-4;j<signal_size;j++) {
@@ -17,6 +17,11 @@ int** check_file(FILE *file){
     fread(&y, sizeof(double [signal_size]), 1, file);    
     for(int j=signal_size-4;j<signal_size;j++) {
          printf("WRITTEN Y[%d] = %f\n", j, y[j]);
+    }
+
+    fread(&xy_true, sizeof(double [signal_size]), 1, file);    
+    for(int j=signal_size-4;j<signal_size;j++) {
+         printf("WRITTEN XY_TRUE[%d] = %f\n", j, xy[j]);
     }
 
     fread(&xy, sizeof(double [signal_size]), 1, file);    
@@ -78,9 +83,9 @@ int main(int argc, char *argv[])
         }
 
         // read one file, then read the other and send it to the function of processing
-        process_signal(file);
+        //process_signal(file);
         //file = fopen(argv[i], "rb"); 
-        //check_file(file);
+        check_file(file);
     }    
     return 0;
 }

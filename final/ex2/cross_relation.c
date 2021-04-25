@@ -18,6 +18,7 @@ double computeValue(int n, double * x, double * y, int point){
     return (double) result;
 }
 
+
 int main(int argc, char *argv[])
 {   
     char *files[10];    
@@ -75,6 +76,10 @@ int main(int argc, char *argv[])
         printf ("its status was %d\n", *status_p);
     }
 
+    // If the partialInfo class is not empty, store the results in the given file
+    storeResults();
+    checkProcessingResults();
+
     t1 = ((double) clock ()) / CLOCKS_PER_SEC;
     printf ("\nElapsed time = %.6f s\n", t1 - t0);
     exit (EXIT_SUCCESS);
@@ -92,11 +97,12 @@ static void *work(int tid){
 
     while (processConvPoint(id, &fileId, &n, &x, &y, &point) != 2){
         val = computeValue(n, x, y, point);
-
         savePartialResults(id, fileId, point, val);
     }
 
     statusWorker[id] = EXIT_SUCCESS;
     pthread_exit (&statusWorker[id]);
 }
+
+
 
