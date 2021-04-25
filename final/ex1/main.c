@@ -81,7 +81,7 @@ int main(int argc, char *argv[]){
 static void *work(int tid){
 
     int id = tid;
-    char buff[100];
+    char buff[1050];
     printf("Thread %d created \n", id);
     struct PartialInfo partialInfo;
 

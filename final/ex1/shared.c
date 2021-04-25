@@ -15,7 +15,7 @@ static int numberOfFiles;
 static char *files[10];
 static FILE *file;
 static int currIndex = -1;
-static int chunkSize = 75;
+static int chunkSize = 1000;
 static int finishedTexts = 0;
 //struct PartialInfo finalInfo;
 struct PartialInfo finalInfo[10];
